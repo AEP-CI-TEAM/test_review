@@ -1,0 +1,33 @@
+name: apprv
+on:
+  pull_request_target:
+    types: [opened, synchronize, edited]
+
+jobs:
+  FW_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fork repo infor
+        run: |
+          echo ${{ github.base_ref }} 
+          echo ${{ github.event.pull_request.number }}
+          echo ${{ github.event.pull_request.head.sha }} 
+          echo ${{ github.event.pull_request.base.sha  }}          
+    
+      - name: Create GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+        
+      - name: Generate a review from check statuses
+        run: |
+            curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+              -d '{"event":"APPROVE"}' \
+              https://api.github.com/repos/SiliconLabsSoftware/${{ github.event.repository.name }}/pulls/${{ github.event.pull_request.number }}/reviews
+          # else
+          #   curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ steps.aep-app-token.outputs.token }}" \
+          #   https://api.github.com/repos/SiliconLabsSoftware/${{ github.event.repository.name }}/pulls/${{ github.event.pull_request.number }}/reviews \
+          #   -d '{"commit_id":"${{ github.sha }}", "body":"Some checks were not successful!", "event":"REQUEST_CHANGES"}'
